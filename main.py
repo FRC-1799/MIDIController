@@ -1,56 +1,6 @@
-# #!/usr/bin/env python
-# #
-# # midiin_poll.py
-# #
-# """Show how to receive MIDI input by polling an input port."""
-
-# from __future__ import print_function
-
-# import logging
-# import sys
-# import time
-# from wpilib import SmartDashboard
-
-# from rtmidi.midiutil import open_midiinput
-
-
-# log = logging.getLogger('midiin_poll')
-# logging.basicConfig(level=logging.DEBUG)
-
-# # Prompts user for MIDI input port, unless a valid port number or name
-# # is given as the first argument on the command line.
-# # API backend defaults to ALSA on Linux.
-# port = sys.argv[1] if len(sys.argv) > 1 else None
-
-# try:
-#     midiin, port_name = open_midiinput(port)
-# except (EOFError, KeyboardInterrupt):
-#     sys.exit()
-
-# print("Entering main loop. Press Control-C to exit.")
-
-# SmartDashboard.putNumber("value", 1)
-# try:
-#     timer = time.time()
-#     while True:
-#         msg = midiin.get_message()
-
-#         if msg:
-#             message, deltatime = msg
-#             timer += deltatime
-            
-
-#         time.sleep(0.01)
-# except KeyboardInterrupt:
-#     print('')
-# finally:
-#     print("Exit.")
-#     midiin.close_port()
-#     del midiin
-
-
 import pygame
 import pygame.midi
+import ntcore
 
 pygame.init()
 pygame.display.set_caption("MIDI Output")
@@ -59,22 +9,124 @@ screen = pygame.display.set_mode((400, 300))
 font = pygame.font.Font(None, 36)
 
 pygame.midi.init()
+
+
 player = pygame.midi.Input(1)
 
-while True:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            exit()
+clock = pygame.time.Clock()
 
-    if player.poll():
-        midi_events = player.read(10)
-        text = ""
-        for midi_event in midi_events:
-            text += str(midi_event[0][2]) + "\n"
+inst = ntcore.NetworkTableInstance.getDefault()
+
+table = inst.getTable("datatable")
+
+buttonID = {
+    "bankButton1": 1, 
+    "bankButton2": 2, 
+    "slider1": 3, 
+    "slider2": 4, 
+    "slider3": 5, 
+    "slider4": 6, 
+    "slider5": 7, 
+    "slider6": 8, 
+    "slider7": 9, 
+    "slider8": 10, 
+    "slider9": 11, 
+    "dail1": 14, 
+    "dail2": 15, 
+    "dail3": 16, 
+    "dail4": 17, 
+    "dail5": 18, 
+    "dail6": 19, 
+    "dail7": 20, 
+    "dail8": 21, 
+    "dail9": 22, 
+    "record": 44,
+    "pause": 45,
+    "play": 46,
+    "rewindLeft": 47,
+    "rewindRight": 48,
+    "replay": 49,
+    "sliderAB": 60,
+    "rightSilverDial": 64,
+    "leftSilverDial": 67,
+}
+
+buttonValue = {
+    "bankButton1":0, 
+    "bankButton2":0, 
+    "slider1":0, 
+    "slider2":0, 
+    "slider3":0, 
+    "slider4":0, 
+    "slider5":0, 
+    "slider6":0, 
+    "slider7":0, 
+    "slider8":0, 
+    "slider9":0, 
+    "dail1":0, 
+    "dail2":0, 
+    "dail3":0, 
+    "dail4":0, 
+    "dail5":0, 
+    "dail6":0, 
+    "dail7":0, 
+    "dail8":0, 
+    "dail9":0, 
+    "record":0,
+    "pause":0,
+    "play":0,
+    "rewindLeft":0,
+    "rewindRight":0,
+    "replay":0,
+    "sliderAB":0,
+    "rightSilverDial":0,
+    "leftSilverDial":0 
+}
+
+
+
+def main(): 
+
+
+
+    
+    inputChecking()
+
+
+def inputChecking():
+    global player, clock
+    while True:
         
-        text_surface = font.render(text, True, (255, 255, 255))
-        pygame.draw.rect(screen, "black", (0,0,1000,1000))
-        screen.blit(text_surface, (50, 50))
-        
-        pygame.display.flip()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+
+        if player.poll():
+            midi_events = player.read(10)
+            
+            changeValue = ""
+            for midi_event in midi_events:
+                
+                changeValue += str(midi_event[0][1])
+                for key, value in buttonID.items():
+                    if midi_event[0][1] == value:
+                        buttonValue[key] = changeValue
+                        
+                        puttingValues(buttonValue)
+                        
+            
+            text_surface = font.render(changeValue, True, (255, 255, 255))
+            pygame.draw.rect(screen, "black", (0,0,1000,1000))
+            screen.blit(text_surface, (50, 50))
+            clock.tick(1000)
+            
+
+            pygame.display.update()
+
+def puttingValues(dictOfVals):
+    for key, value in dictOfVals.items():
+        table.putValue(key, value)
+
+
+main()
