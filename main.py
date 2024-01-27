@@ -1,27 +1,48 @@
 #from networktables import NetworkTables
-from networktables import NetworkTablesInstance
+import networktables
 import pygame
-import pygame.midi
+from pygame import midi
 #import ntcore
 import ntcore
+from time import sleep
 
 pygame.init()
 pygame.display.set_caption("MIDI Output")
 
-screen = pygame.display.set_mode((400, 300))
+pathToMechanicalJackson = pygame.image.load("C:\\Users\\FRC1799\\Pictures\\michal_jonson.png")
+
+pygame.display.set_icon(pathToMechanicalJackson)
+
+WIDTH = 500
+HEIGHT = 500
+
+counter  = 0
+problemTime = 1000
+
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
 font = pygame.font.Font(None, 36)
 
-pygame.midi.init()
 
-player = pygame.midi.Input(1)
+midi.init()
+
+try:
+    player = midi.Input(1)
+
+except pygame.midi.MidiException:
+    print("Device not Connected!")
+    sleep(1)
+
+
 clock = pygame.time.Clock()
+    
 
 
-nt = NetworkTablesInstance.getDefault()
+nt = networktables.NetworkTablesInstance.getDefault()
 nt.startClient("10.17.99.2")
 table = nt.getTable("MidiTable") 
-inst = ntcore.NetworkTableInstance.getDefault()
 
+tableIsConnect = False
+midiIsConnect = False
 
 # connect to a roboRIO with team number TEAM
 #inst.setServerTeam(1799, 5810)
@@ -126,39 +147,45 @@ def main():
 
 
 def inputChecking():
-    global player, clock, buttonValue
+    global player, clock, buttonValue, counter, midiOpen
     while True:
         
         puttingValues(buttonValue)
 
-        inst.startClient4("midiboard")
+        nt.startClient("10.17.99.2")
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 exit()
 
         if player.poll():
+            counter=0
             midi_events = player.read(10)
             
-            changeValue = ""
+            checkInput = ""
+            changeValue = 0
             for midi_event in midi_events:
                 
-                changeValue += str(midi_event[0][1])
+                checkInput += str(midi_event[0][1])
+                changeValue += midi_event[0][2]
                 for key, value in buttonID.items():
                     if midi_event[0][1] == value:
                         buttonValue[key] = changeValue
                         
                         
-                        
-            
-            text_surface = font.render(changeValue, True, (255, 255, 255))
-            pygame.draw.rect(screen, "black", (0,0,1000,1000))
-            screen.blit(text_surface, (50, 50))
-            
-            clock.tick(1000)
-            
+        tableIsConnect = nt.isConnected()
+        midiIsConnect = player._check_open()
+        
+        text_surface = font.render("Network Table Connected: " + str(tableIsConnect), True, (255, 255, 255))
+        pygame.draw.rect(screen, "black", (0, 0, WIDTH, HEIGHT))
+        screen.blit(text_surface, (0, 0))
 
-            pygame.display.update()
+        counterSurface  = font.render(f"Getting Midi Inputs: {midiIsConnect==None}", True, (255, 255, 255))
+        screen.blit(counterSurface, (0, 25))
+
+        sleep(0.02)
+        pygame.display.update()
+            
 
 def puttingValues(dictOfVals):
     global table
