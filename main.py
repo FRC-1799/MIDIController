@@ -9,10 +9,6 @@ from time import sleep
 pygame.init()
 pygame.display.set_caption("MIDI Output")
 
-pathToMechanicalJackson = pygame.image.load("C:\\Users\\FRC1799\\Pictures\\michal_jonson.png")
-
-pygame.display.set_icon(pathToMechanicalJackson)
-
 WIDTH = 500
 HEIGHT = 500
 
