@@ -1,5 +1,8 @@
+#from networktables import NetworkTables
+from networktables import NetworkTablesInstance
 import pygame
 import pygame.midi
+#import ntcore
 import ntcore
 
 pygame.init()
@@ -10,27 +13,29 @@ font = pygame.font.Font(None, 36)
 
 pygame.midi.init()
 
-
 player = pygame.midi.Input(1)
-
 clock = pygame.time.Clock()
 
+
+nt = NetworkTablesInstance.getDefault()
+nt.startClient("10.17.99.2")
+table = nt.getTable("MidiTable") 
 inst = ntcore.NetworkTableInstance.getDefault()
 
-# start a NT4 client
-inst.startClient4("example client")
 
 # connect to a roboRIO with team number TEAM
-inst.setServerTeam(1799)
+#inst.setServerTeam(1799, 5810)
 
 # starting a DS client will try to get the roboRIO address from the DS application
-inst.startDSClient()
+#inst.startDSClient()
 
 # connect to a specific host/port
-inst.setServer("host", ntcore.NetworkTableInstance.kDefaultPort4)
+#inst.setServer("host", ntcore.NetworkTableInstance.kDefaultPort4)
 
 
-table = inst.getTable("datatable")
+#table = NetworkTables.getTable("datatable")
+
+#bankPublish = table.getDoubleTopic("HI________________1").publish()
 
 buttonID = {
     "bankButton1": 1, 
@@ -53,6 +58,15 @@ buttonID = {
     "dail7": 20, 
     "dail8": 21, 
     "dail9": 22, 
+    "button1": 23,
+    "button2": 24,
+    "button3": 25,
+    "button4": 26,
+    "button5": 27,
+    "button6": 28,
+    "button7": 29,
+    "button8": 30,
+    "button9": 31,
     "record": 44,
     "pause": 45,
     "play": 46,
@@ -85,6 +99,15 @@ buttonValue = {
     "dail7":0, 
     "dail8":0, 
     "dail9":0, 
+    "button1": 0,
+    "button2": 0,
+    "button3": 0,
+    "button4": 0,
+    "button5": 0,
+    "button6": 0,
+    "button7": 0,
+    "button8": 0,
+    "button9": 0,
     "record":0,
     "pause":0,
     "play":0,
@@ -99,17 +122,16 @@ buttonValue = {
 
 
 def main(): 
-
-
-
-    
     inputChecking()
 
 
 def inputChecking():
-    global player, clock
+    global player, clock, buttonValue
     while True:
         
+        puttingValues(buttonValue)
+
+        inst.startClient4("midiboard")
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -126,10 +148,10 @@ def inputChecking():
                     if midi_event[0][1] == value:
                         buttonValue[key] = changeValue
                         
-                        puttingValues(buttonValue)
+                        
                         
             
-            text_surface = font.render(changeValue+str(inst.isConnected()), True, (255, 255, 255))
+            text_surface = font.render(changeValue, True, (255, 255, 255))
             pygame.draw.rect(screen, "black", (0,0,1000,1000))
             screen.blit(text_surface, (50, 50))
             
@@ -139,6 +161,7 @@ def inputChecking():
             pygame.display.update()
 
 def puttingValues(dictOfVals):
+    global table
     for key, value in dictOfVals.items():
         table.putValue(key, value)
 
