@@ -17,6 +17,19 @@ clock = pygame.time.Clock()
 
 inst = ntcore.NetworkTableInstance.getDefault()
 
+# start a NT4 client
+inst.startClient4("example client")
+
+# connect to a roboRIO with team number TEAM
+inst.setServerTeam(1799)
+
+# starting a DS client will try to get the roboRIO address from the DS application
+inst.startDSClient()
+
+# connect to a specific host/port
+inst.setServer("host", ntcore.NetworkTableInstance.kDefaultPort4)
+
+
 table = inst.getTable("datatable")
 
 buttonID = {
@@ -116,9 +129,10 @@ def inputChecking():
                         puttingValues(buttonValue)
                         
             
-            text_surface = font.render(changeValue, True, (255, 255, 255))
+            text_surface = font.render(changeValue+str(inst.isConnected()), True, (255, 255, 255))
             pygame.draw.rect(screen, "black", (0,0,1000,1000))
             screen.blit(text_surface, (50, 50))
+            
             clock.tick(1000)
             
 
