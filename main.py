@@ -1,23 +1,58 @@
+#from networktables import NetworkTables
+import networktables
 import pygame
-import pygame.midi
+from pygame import midi
+#import ntcore
 import ntcore
+from time import sleep
 
 pygame.init()
 pygame.display.set_caption("MIDI Output")
 
-screen = pygame.display.set_mode((400, 300))
+WIDTH = 500
+HEIGHT = 500
+
+counter  = 0
+problemTime = 1000
+
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
 font = pygame.font.Font(None, 36)
 
-pygame.midi.init()
 
+midi.init()
 
-player = pygame.midi.Input(1)
+try:
+    player = midi.Input(1)
+
+except pygame.midi.MidiException:
+    print("Device not Connected!")
+    sleep(1)
+
 
 clock = pygame.time.Clock()
+    
 
-inst = ntcore.NetworkTableInstance.getDefault()
 
-table = inst.getTable("datatable")
+nt = networktables.NetworkTablesInstance.getDefault()
+nt.startClient("10.17.99.2")
+table = nt.getTable("MidiTable") 
+
+tableIsConnect = False
+midiIsConnect = False
+
+# connect to a roboRIO with team number TEAM
+#inst.setServerTeam(1799, 5810)
+
+# starting a DS client will try to get the roboRIO address from the DS application
+#inst.startDSClient()
+
+# connect to a specific host/port
+#inst.setServer("host", ntcore.NetworkTableInstance.kDefaultPort4)
+
+
+#table = NetworkTables.getTable("datatable")
+
+#bankPublish = table.getDoubleTopic("HI________________1").publish()
 
 buttonID = {
     "bankButton1": 1, 
@@ -40,6 +75,15 @@ buttonID = {
     "dail7": 20, 
     "dail8": 21, 
     "dail9": 22, 
+    "button1": 23,
+    "button2": 24,
+    "button3": 25,
+    "button4": 26,
+    "button5": 27,
+    "button6": 28,
+    "button7": 29,
+    "button8": 30,
+    "button9": 31,
     "record": 44,
     "pause": 45,
     "play": 46,
@@ -72,6 +116,15 @@ buttonValue = {
     "dail7":0, 
     "dail8":0, 
     "dail9":0, 
+    "button1": 0,
+    "button2": 0,
+    "button3": 0,
+    "button4": 0,
+    "button5": 0,
+    "button6": 0,
+    "button7": 0,
+    "button8": 0,
+    "button9": 0,
     "record":0,
     "pause":0,
     "play":0,
@@ -86,45 +139,52 @@ buttonValue = {
 
 
 def main(): 
-
-
-
-    
     inputChecking()
 
 
 def inputChecking():
-    global player, clock
+    global player, clock, buttonValue, counter, midiOpen
     while True:
         
+        puttingValues(buttonValue)
+
+        nt.startClient("10.17.99.2")
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 exit()
 
         if player.poll():
+            counter=0
             midi_events = player.read(10)
             
-            changeValue = ""
+            checkInput = ""
+            changeValue = 0
             for midi_event in midi_events:
                 
-                changeValue += str(midi_event[0][1])
+                checkInput += str(midi_event[0][1])
+                changeValue += midi_event[0][2]
                 for key, value in buttonID.items():
                     if midi_event[0][1] == value:
                         buttonValue[key] = changeValue
                         
-                        puttingValues(buttonValue)
                         
-            
-            text_surface = font.render(changeValue, True, (255, 255, 255))
-            pygame.draw.rect(screen, "black", (0,0,1000,1000))
-            screen.blit(text_surface, (50, 50))
-            clock.tick(1000)
-            
+        tableIsConnect = nt.isConnected()
+        midiIsConnect = player._check_open()
+        
+        text_surface = font.render("Network Table Connected: " + str(tableIsConnect), True, (255, 255, 255))
+        pygame.draw.rect(screen, "black", (0, 0, WIDTH, HEIGHT))
+        screen.blit(text_surface, (0, 0))
 
-            pygame.display.update()
+        counterSurface  = font.render(f"Getting Midi Inputs: {midiIsConnect==None}", True, (255, 255, 255))
+        screen.blit(counterSurface, (0, 25))
+
+        sleep(0.02)
+        pygame.display.update()
+            
 
 def puttingValues(dictOfVals):
+    global table
     for key, value in dictOfVals.items():
         table.putValue(key, value)
 
